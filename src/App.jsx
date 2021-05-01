@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from "react";
-import Download from "./Download";
+import { useCallback, useEffect, useState } from "react";
+import Upload from "./Upload";
 import "./styles.css";
 
 let index = 0;
@@ -15,56 +15,58 @@ const createFile = (isSuccess) => {
   };
 };
 
-const hasUpload = (list) => {
-  return list.filter((item) => item.state === "uploading").length > 0;
-};
-
 export default function App() {
   const [list, setList] = useState([]);
+  const [uploadCount, setUploadCount] = useState(0);
+  const [successCount, setSuccessCount] = useState(0);
+
+  const calc = useCallback((count, state) => {
+    setUploadCount((uploadCount) => uploadCount + count);
+    if (state === "success") {
+      setSuccessCount((successCount) => successCount + 1);
+    }
+  }, []);
 
   const creatSuccessFileHandle = useCallback(() => {
     const file = createFile(true);
 
-    setList((list) => [...list, { id: createId(), file, state: "waiting" }]);
-    freshList();
-  }, []);
+    setList((list) => [...list, { id: createId(), file, canUpload: false }]);
+    if (uploadCount <= 0) {
+      freshList();
+    }
+  }, [uploadCount]);
 
   const creatFailFileHandle = useCallback(() => {
     const file = createFile(false);
 
-    setList((list) => [...list, { id: createId(), file, state: "waiting" }]);
-    freshList();
-  }, []);
+    setList((list) => [...list, { id: createId(), file, canUpload: false }]);
+    if (uploadCount <= 0) {
+      freshList();
+    }
+  }, [uploadCount]);
+
+  useEffect(() => {
+    if (uploadCount <= 0) {
+      freshList();
+    }
+  }, [uploadCount]);
 
   const freshList = useCallback((id, state) => {
     // 这个地方需要对list进行统一处理，感觉也有点别扭，其实设置列表状态和扫描列表状态应该拆开比较好
     setList((list) => {
-      let newList = list.map((item) => {
-        if (item.id === id) {
+      let isSetUploading = false;
+      const newList = list.map((item) => {
+        if (item.canUpload === false && isSetUploading === false) {
+          isSetUploading = true;
           return {
-            id,
-            state: state,
-            file: item.file
+            id: item.id,
+            file: item.file,
+            canUpload: true
           };
         } else {
           return item;
         }
       });
-      if (!hasUpload(newList)) {
-        let isSetUploading = false;
-        newList = newList.map((item) => {
-          if (item.state === "waiting" && isSetUploading === false) {
-            isSetUploading = true;
-            return {
-              id: item.id,
-              file: item.file,
-              state: "ready"
-            };
-          } else {
-            return item;
-          }
-        });
-      }
       return newList;
     });
   }, []);
@@ -78,11 +80,10 @@ export default function App() {
       </div>
       <div style={{ margin: 20 }}>
         {list.map((item) => (
-          <Download item={item} key={item.id} freshList={freshList} />
+          <Upload item={item} key={item.id} calc={calc} />
         ))}
       </div>
-      {list.length > 0 &&
-      list.filter((item) => item.state === "success").length === list.length ? (
+      {list.length > 0 && list.length === successCount ? (
         <div>全部上传完成</div>
       ) : null}
     </div>

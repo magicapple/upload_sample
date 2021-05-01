@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import UploadMock from "./UploadMock";
 
-const Download = ({ item: { id, file, state }, freshList }) => {
+const Upload = ({ item: { id, file, canUpload }, calc }) => {
   const [progress, setProgress] = useState(0);
+  const [state, setState] = useState("ready");
 
   const upload = useMemo(() => {
     const successCallback = () => {
-      freshList(id, "success");
+      setState("success");
+      calc(-1, "success");
     };
 
     const errorCallback = () => {
-      freshList(id, "error");
+      setState("error");
+      calc(-1);
     };
 
     const progressCallback = (progress) => {
@@ -26,15 +29,17 @@ const Download = ({ item: { id, file, state }, freshList }) => {
   }, []);
 
   useEffect(() => {
-    if (state === "ready") {
+    if (canUpload) {
       upload.start();
-      freshList(id, "uploading");
+      setState("uploading");
+      calc(1);
     }
-  }, [state]);
+  }, [canUpload]);
 
   const retryHandle = () => {
     upload.start();
-    freshList(id, "uploading");
+    setState("uploading");
+    calc(1);
   };
   return (
     <div>
@@ -44,4 +49,4 @@ const Download = ({ item: { id, file, state }, freshList }) => {
   );
 };
 
-export default Download;
+export default Upload;
