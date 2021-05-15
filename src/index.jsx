@@ -1,12 +1,15 @@
 import { StrictMode } from "react";
 import ReactDOM from "react-dom";
-
-import App from "./App";
+import QueueUploadList from "./UploadList/QueueUploadList";
+import AutoUploadList from "./UploadList/AutoUploadList";
 
 const rootElement = document.getElementById("root");
 ReactDOM.render(
   <StrictMode>
-    <App />
+    <span>队列上传</span>
+    <QueueUploadList />
+    <span>并发上传</span>
+    <AutoUploadList />
   </StrictMode>,
   rootElement
 );
